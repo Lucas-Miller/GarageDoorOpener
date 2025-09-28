@@ -1,0 +1,31 @@
+# Expo (extra)
+.expo-shared/
+
+# Android (safe even if /android is ignored now — future-proof if you commit it later)
+android/.gradle/
+android/.cxx/
+android/local.properties
+android/app/build/
+android/build/
+android/*.iml
+android/.idea/
+
+# iOS (same reasoning)
+ios/Pods/
+ios/build/
+ios/*.xccheckout
+ios/*.xcworkspace/xcshareddata/
+ios/*.xcodeproj/project.xcworkspace/xcshareddata/
+DerivedData/
+
+# Signing / secrets
+*.keystore
+*.keystore.jks
+*.keystore.properties
+*.keystore.backup
+
+# Editors / OS
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
