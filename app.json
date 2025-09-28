@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "GarageDoorOpener",
+    "slug": "garagedooropener",
+    "version": "1.0.0",
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 24,
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35
+          },
+          "ios": {
+            "deploymentTarget": "15.1"
+          }
+        }
+      ]
+    ],
+    "android": {
+      "package": "com.example.garagedooropener",
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.BLUETOOTH",
+        "android.permission.BLUETOOTH_ADMIN",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.BLUETOOTH_SCAN",
+        "android.permission.BLUETOOTH_CONNECT"
+      ]
+    },
+    "ios": {
+      "bundleIdentifier": "com.example.garagedooropener",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSBluetoothAlwaysUsageDescription": "This app uses Bluetooth to control your garage door.",
+        "NSBluetoothPeripheralUsageDescription": "This app uses Bluetooth to control your garage door.",
+        "NSLocationWhenInUseUsageDescription": "Location is required to scan for BLE devices."
+      }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "104db8cb-21ba-46f6-83c1-725e263f6303"
+      }
+    }
+  }
+}
