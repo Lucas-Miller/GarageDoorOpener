@@ -9,17 +9,24 @@ import {
   Text,
   View,
 } from 'react-native';
-import { BleManager, Device } from 'react-native-ble-plx';
+import { BleManager, Device, Characteristic } from 'react-native-ble-plx';
+import { Buffer } from 'buffer';
 
 const DEVICE_NAME = 'GarageDoorSim';
+const SERVICE_UUID = '5b6d6b9f-1c2a-4a37-8d0e-6f7f1f2a3b4c';
+const COMMAND_CHAR_UUID = 'a1a2a3a4-b1b2-b3b4-b5b6-b7b8b9b0c0d0';
 
 export default function App() {
   const manager = useMemo(() => new BleManager(), []);
   const [status, setStatus] = useState('Idle');
   const [connected, setConnected] = useState(false);
   const deviceRef = useRef<Device | null>(null);
+  const charRef = useRef<Characteristic | null>(null);
 
   useEffect(() => {
+    // polyfill Buffer if missing
+    // @ts-ignore
+    if (typeof global.Buffer === 'undefined') global.Buffer = Buffer;
     return () => {
       deviceRef.current?.cancelConnection().catch(() => {});
       manager.destroy();
@@ -64,6 +71,14 @@ export default function App() {
           setStatus('Discovering services…');
           await d.discoverAllServicesAndCharacteristics();
 
+          const service = (await d.services()).find(s => eqUuid(s.uuid, SERVICE_UUID));
+          if (!service) { setStatus('Service not found'); return; }
+
+          const chars = await d.characteristicsForService(service.uuid);
+          const cmd = chars.find(c => eqUuid(c.uuid, COMMAND_CHAR_UUID));
+          if (!cmd) { setStatus('Command characteristic not found'); return; }
+
+          charRef.current = cmd;
           setConnected(true);
           setStatus('Connected');
         } catch (e: any) {
@@ -73,10 +88,35 @@ export default function App() {
     }, true);
   };
 
+  const sendToggle = async () => {
+    if (!connected || !deviceRef.current || !charRef.current) {
+      setStatus('Not connected');
+      return;
+    }
+    setStatus('Sending…');
+    const payload = Buffer.from('o', 'utf8').toString('base64');
+    try {
+      await deviceRef.current.writeCharacteristicWithoutResponseForService(
+        SERVICE_UUID, COMMAND_CHAR_UUID, payload
+      );
+      setStatus('Sent');
+    } catch {
+      try {
+        await deviceRef.current.writeCharacteristicWithResponseForService(
+          SERVICE_UUID, COMMAND_CHAR_UUID, payload
+        );
+        setStatus('Sent');
+      } catch (e: any) {
+        setStatus(`Write failed: ${String(e?.message || e)}`);
+      }
+    }
+  };
+
   const disconnect = async () => {
     setStatus('Disconnecting…');
     try { await deviceRef.current?.cancelConnection(); } catch {}
     deviceRef.current = null;
+    charRef.current = null;
     setConnected(false);
     setStatus('Disconnected');
   };
@@ -88,14 +128,19 @@ export default function App() {
         <Text style={styles.title}>Garage Door</Text>
         <Text style={styles.status}>{status}</Text>
         <View style={styles.row}>
-          <Button title={connected ? 'Disconnect' : 'Connect'} onPress={connected ? disconnect : connect} />
+          <Button
+            title={connected ? 'Disconnect' : 'Connect'}
+            onPress={connected ? disconnect : connect}
+          />
         </View>
         <View style={styles.row}>
-          <Button title="Open / Close" onPress={() => {}} disabled={!connected} />
+          <Button title="Open / Close" onPress={sendToggle} disabled={!connected} />
         </View>
       </View>
     </SafeAreaView>
   );
+
+  function eqUuid(a: string, b: string) { return a.toLowerCase() === b.toLowerCase(); }
 
   function scanForName(name: string, timeoutMs: number): Promise<Device | null> {
     return new Promise((resolve, reject) => {
