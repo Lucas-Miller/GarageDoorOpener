@@ -15,3 +15,8 @@ This project lets you control your garage door from your phone over bluetooth lo
 Root of the project is a Typescript React Native app that lets us send commands to the ESP32 Controller
 
 The ESP32 Controller code is located in the GarageDoorController directory
+
+# Wiring Diagram
+
+
+<img width="1893" height="1840" alt="ArduinoGarageDoor" src="https://github.com/user-attachments/assets/fa1335f7-eb13-4f96-ba13-ff42886be5f2" />
