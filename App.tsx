@@ -3,12 +3,12 @@ import {
   Button,
   Platform,
   PermissionsAndroid,
-  SafeAreaView,
   StatusBar,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { BleManager, Device, Characteristic } from 'react-native-ble-plx';
 import { Buffer } from 'buffer';
 
@@ -27,14 +27,17 @@ export default function App() {
     // polyfill Buffer if missing
     // @ts-ignore
     if (typeof global.Buffer === 'undefined') global.Buffer = Buffer;
+
     return () => {
       deviceRef.current?.cancelConnection().catch(() => {});
       manager.destroy();
     };
+
   }, [manager]);
 
   const ensurePermissions = async () => {
     if (Platform.OS !== 'android') return true;
+
     if (Platform.Version >= 31) {
       const res = await PermissionsAndroid.requestMultiple([
         'android.permission.BLUETOOTH_SCAN',
@@ -71,11 +74,11 @@ export default function App() {
           setStatus('Discovering services…');
           await d.discoverAllServicesAndCharacteristics();
 
-          const service = (await d.services()).find(s => eqUuid(s.uuid, SERVICE_UUID));
+          const service = (await d.services()).find(s => isSameUuid(s.uuid, SERVICE_UUID));
           if (!service) { setStatus('Service not found'); return; }
 
           const chars = await d.characteristicsForService(service.uuid);
-          const cmd = chars.find(c => eqUuid(c.uuid, COMMAND_CHAR_UUID));
+          const cmd = chars.find(c => isSameUuid(c.uuid, COMMAND_CHAR_UUID));
           if (!cmd) { setStatus('Command characteristic not found'); return; }
 
           charRef.current = cmd;
@@ -89,23 +92,33 @@ export default function App() {
   };
 
   const sendToggle = async () => {
+    
     if (!connected || !deviceRef.current || !charRef.current) {
       setStatus('Not connected');
       return;
     }
+
     setStatus('Sending…');
+    
     const payload = Buffer.from('o', 'utf8').toString('base64');
     try {
+
       await deviceRef.current.writeCharacteristicWithoutResponseForService(
         SERVICE_UUID, COMMAND_CHAR_UUID, payload
       );
+
       setStatus('Sent');
+
     } catch {
+
       try {
+
         await deviceRef.current.writeCharacteristicWithResponseForService(
           SERVICE_UUID, COMMAND_CHAR_UUID, payload
         );
+
         setStatus('Sent');
+
       } catch (e: any) {
         setStatus(`Write failed: ${String(e?.message || e)}`);
       }
@@ -140,8 +153,10 @@ export default function App() {
     </SafeAreaView>
   );
 
-  function eqUuid(a: string, b: string) { return a.toLowerCase() === b.toLowerCase(); }
+  // compare two UUID's to see if they are the same
+  function isSameUuid(a: string, b: string) { return a.toLowerCase() === b.toLowerCase(); }
 
+  // Scan BLE for devices with a name that matches the name parameter
   function scanForName(name: string, timeoutMs: number): Promise<Device | null> {
     return new Promise((resolve, reject) => {
       let resolved = false;

@@ -1,3 +1,8 @@
+# Expo prebuild outputs (native projects)
+android/
+ios/
+.expo/
+
 # Expo (extra)
 .expo-shared/
 
